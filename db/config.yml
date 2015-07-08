@@ -1,0 +1,28 @@
+defaults: &defaults
+  adapter: postgresql
+  encoding: unicode
+  port: 5432
+  # Pool size is matched to number of worker threads
+  pool: 16
+  # Don't use prepared statements with pgBouncer transaction pooling
+  prepared_statements: false
+  properties:
+    prepareThreshold: 0
+
+development:
+  <<: *defaults
+  host: localhost
+  database: backpack_dev
+
+# test:
+#   <<: *defaults
+#   host: localhost
+#   database: backpack_test
+
+# production:
+#   <<: *defaults
+#   host:
+#   port:
+#   database:
+#   username:
+#   password:
