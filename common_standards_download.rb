@@ -3,7 +3,7 @@ require 'hashie'
 
 class CommonStandardsDownload
 
-  BASE_URL = 'http://api.commonstandardsproject.com/api/'
+  BASE_URL = 'http://api.commonstandardsproject.com/api/v1/'
 
   def self.run(api_key, limit=nil)
     dl = self.new(api_key, limit)
