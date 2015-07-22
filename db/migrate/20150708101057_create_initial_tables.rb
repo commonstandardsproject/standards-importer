@@ -10,7 +10,7 @@ class CreateInitialTables < ActiveRecord::Migration
     add_index :jurisdictions, :csp_id
 
     create_table :standards do |t|
-      t.integer :jurisdiction_id, :required, :index
+      t.column :jurisdiction_id, :integer, null: false
       t.column :csp_id, :string
       t.column :parent_ids, :integer, array: true, null: false, default: []
       t.column :education_levels, :string, array: true, null: false, default: []
