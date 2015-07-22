@@ -26,9 +26,7 @@ ActiveRecord::Schema.define(version: 20150708101057) do
   add_index "jurisdictions", ["csp_id"], name: "index_jurisdictions_on_csp_id", using: :btree
 
   create_table "standards", force: :cascade do |t|
-    t.integer "jurisdiction_id"
-    t.integer "required"
-    t.integer "index"
+    t.integer "jurisdiction_id",                  null: false
     t.string  "csp_id"
     t.integer "parent_ids",       default: [],    null: false, array: true
     t.string  "education_levels", default: [],    null: false, array: true
@@ -40,6 +38,11 @@ ActiveRecord::Schema.define(version: 20150708101057) do
 
   add_index "standards", ["csp_id"], name: "index_standards_on_csp_id", using: :btree
   add_index "standards", ["jurisdiction_id"], name: "index_standards_on_jurisdiction_id", using: :btree
+  add_index "standards", ["parent_ids"], name: "index_standards_on_parent_ids", using: :gin
+
+  create_table "standards_schema_migrations", id: false, force: :cascade do |t|
+    t.string "version", null: false
+  end
 
   add_foreign_key "standards", "jurisdictions"
 end

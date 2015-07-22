@@ -2,6 +2,12 @@ require_relative 'common_standards_download'
 require_relative 'common_standards_import'
 require 'standalone_migrations'
 
+ActiveRecord::SchemaMigration.class_eval do
+  def self.table_name
+    'standards_schema_migrations'
+  end
+end
+
 StandaloneMigrations::Tasks.load_tasks
 
 task :default => :import

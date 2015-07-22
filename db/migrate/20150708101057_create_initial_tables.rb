@@ -23,6 +23,7 @@ class CreateInitialTables < ActiveRecord::Migration
 
     add_index :standards, :jurisdiction_id
     add_index :standards, :csp_id
+    add_index :standards, :parent_ids, using: 'gin'
 
   end
 end
