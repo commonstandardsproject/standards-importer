@@ -1,41 +1,28 @@
 class CreateInitialTables < ActiveRecord::Migration
   def change
-    create_table :jurisdictions, {id: false} do |t|
-      t.string :id, :required, :index, unique: true
+    create_table :jurisdictions do |t|
+      t.column :csp_id, :string
+      t.column :document, :json
       t.string :title
       t.string :type
     end
 
-    add_index :jurisdictions, :id, unique: true
+    add_index :jurisdictions, :csp_id
 
-    create_table :standard_sets, {id: false} do |t|
-      t.string :id, :required, :index, unique: true
-      t.string :jurisdiction_id, :required, :index
+    create_table :standards do |t|
+      t.integer :jurisdiction_id, :required, :index
+      t.column :csp_id, :string
+      t.column :parent_ids, :integer, array: true, null: false, default: []
+      t.column :education_levels, :string, array: true, null: false, default: []
       t.string :title
       t.string :subject
-      t.column :meta, :json
+      t.column :document, :json
+      t.column :indexed, :boolean, null:false, default: false
       t.foreign_key :jurisdictions
     end
 
-    add_index :standard_sets, :id, unique: true
-    add_index :standard_sets, :jurisdiction_id
-
-    create_table :standards, {id: false} do |t|
-      t.string :id, :required, :index, unique: true
-      t.string :jurisdiction_id, :required, :index
-      t.string :standard_set_id, :required, :index
-      t.string :title
-      t.string :subject
-      t.column :meta, :json
-      t.foreign_key :jurisdictions
-      t.foreign_key :standard_sets
-    end
-
-    add_index :standards, :id, unique: true
     add_index :standards, :jurisdiction_id
-    add_index :standards, :standard_set_id
-
-
+    add_index :standards, :csp_id
 
   end
 end

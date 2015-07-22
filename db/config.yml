@@ -12,7 +12,7 @@ defaults: &defaults
 development:
   <<: *defaults
   host: localhost
-  database: backpack_dev
+  database: standards
 
 # test:
 #   <<: *defaults

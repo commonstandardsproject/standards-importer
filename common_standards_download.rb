@@ -18,8 +18,7 @@ class CommonStandardsDownload
 
   def fetch
     save_hash('jurisdictions', jurisdictions, ['standardSets'])
-    save_hash('standard_sets', standard_sets, ['standards'])
-    save_hash('standards', standards)
+    save_hash('standard_sets', standard_sets)
   end
 
   def standards
