@@ -18,6 +18,7 @@ class CreateInitialTables < ActiveRecord::Migration
       t.string :subject
       t.column :document, :json
       t.column :indexed, :boolean, null:false, default: false
+      t.column :child_count, :integer, default: 0
       t.foreign_key :jurisdictions
     end
 
