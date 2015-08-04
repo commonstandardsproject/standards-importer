@@ -34,6 +34,7 @@ ActiveRecord::Schema.define(version: 20150708101057) do
     t.string  "subject"
     t.json    "document"
     t.boolean "indexed",          default: false, null: false
+    t.integer "child_count",      default: 0
   end
 
   add_index "standards", ["csp_id"], name: "index_standards_on_csp_id", using: :btree
@@ -43,6 +44,8 @@ ActiveRecord::Schema.define(version: 20150708101057) do
   create_table "standards_schema_migrations", id: false, force: :cascade do |t|
     t.string "version", null: false
   end
+
+  add_index "standards_schema_migrations", ["version"], name: "unique_schema_migrations", unique: true, using: :btree
 
   add_foreign_key "standards", "jurisdictions"
 end

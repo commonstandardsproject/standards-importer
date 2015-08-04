@@ -17,6 +17,11 @@ task :import, [:limit] => :fetch do
   puts 'import'
   ENV["ENV"] ||= "development"
   CommonStandardsImport.run('jurisdictions.json', 'standard_sets.json', true)
+  CommonStandardsImport.count_children
+end
+
+task :count do
+  CommonStandardsImport.count_children
 end
 
 task :fetch, [:limit] => :clean do |t, args|

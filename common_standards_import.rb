@@ -13,16 +13,29 @@ end
 class CommonStandardsImport
 
   def self.run(jurisdictions_file, standards_file, wipe_existing=false)
-
-    ActiveRecord::Base.logger = Logger.new('debug.log')
-    configuration = YAML::load(IO.read('db/config.yml'))
-    ActiveRecord::Base.establish_connection(configuration[ENV["ENV"]])
-
-
-
+    ensure_setup
     importer = self.new
     importer.import_jurisdictions(jurisdictions_file)
     importer.import_standards(standards_file)
+  end
+
+  def self.initial_setup
+    ActiveRecord::Base.logger = Logger.new('debug.log')
+    configuration = YAML::load(IO.read('db/config.yml'))
+    ActiveRecord::Base.establish_connection(configuration[ENV["ENV"]])
+  end
+
+  def self.ensure_setup
+    unless @is_setup
+      initial_setup
+      @is_setup = true
+    end
+  end
+
+  def self.count_children
+    ensure_setup
+    @tbl = Standard.table_name
+    Standard.connection.execute("update #{@tbl} as st set child_count = cc.child_count from (select id, (select count(*) from #{@tbl} sc where sp.id = ANY(sc.parent_ids)) child_count from #{@tbl} sp) as cc where st.id = cc.id;")
   end
 
   def import_jurisdictions(file)
@@ -91,4 +104,5 @@ class CommonStandardsImport
       indexed: indexed
     )
   end
+
 end
