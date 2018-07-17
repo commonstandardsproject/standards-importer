@@ -49,13 +49,11 @@ class CommonStandardsImport
       "type" => "private",
       "comment" => "Created by Standards Importer",
     }
-    Jurisdiction.transaction do
-      custom_jurisdiction = importer.create_jurisdiction(jur_hash)
 
-      importer.import_from_csv(custom_jurisdiction, source_dir)
-      puts "successfully imported standards, new Jurisdiction id: #{custom_jurisdiction.id}"
-    end
-
+    custom_jurisdiction = importer.create_jurisdiction(jur_hash)
+    puts "created #{custom_jurisdiction.id}"
+    importer.import_from_csv(custom_jurisdiction, source_dir)
+    puts "successfully imported standards, new Jurisdiction id: #{custom_jurisdiction.id}"
   end
 
   def import_from_csv(jurisdiction, source_dir)
@@ -82,6 +80,7 @@ class CommonStandardsImport
               description: "#{jurisdiction.title} - #{row['Subject']} #{row['Grade']}",
               subject: row['Subject']
             },
+            subject: row['Subject'],
             indexed: false
           )
           puts "created root: #{root.title}"
@@ -107,6 +106,7 @@ class CommonStandardsImport
                 subject: row['Subject']
               },
               indexed: false,
+              subject: row['Subject'],
               parent_ids: parent_ids
             )
             puts "Created Topic #{topic.title}"
@@ -131,6 +131,7 @@ class CommonStandardsImport
                 subject: row['Subject']
               },
               indexed: false,
+              subject: row['Subject'],
               parent_ids: parent_ids
             )
             puts "Created subtopic #{subtopic.title}"
@@ -157,6 +158,7 @@ class CommonStandardsImport
               listId: row['Code']
             },
             indexed: true,
+            subject: row['Subject'],
             parent_ids: parent_ids
           )
         end
