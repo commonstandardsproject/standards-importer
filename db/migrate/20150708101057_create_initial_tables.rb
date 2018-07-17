@@ -1,4 +1,4 @@
-class CreateInitialTables < ActiveRecord::Migration
+class CreateInitialTables < ActiveRecord::Migration[4.2]
   def change
     create_table :jurisdictions do |t|
       t.column :csp_id, :string

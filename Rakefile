@@ -20,6 +20,14 @@ task :import, [:limit] => :fetch do
   CommonStandardsImport.count_children
 end
 
+task :custom do
+  puts 'importing custom'
+  ENV["ENV"] ||= "development"
+  raise "provide a name for this custom standards set by setting JUR_TITLE" unless ENV["JUR_TITLE"]
+  raise "provide a source directory by setting SRC_DIR" unless ENV["SRC_DIR"]
+  CommonStandardsImport.import_custom(ENV["JUR_TITLE"], ENV["SRC_DIR"])
+end
+
 task :count do
   CommonStandardsImport.count_children
 end

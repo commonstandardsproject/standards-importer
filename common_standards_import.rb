@@ -1,5 +1,7 @@
 require 'active_record'
 require 'logger'
+require 'securerandom'
+require 'digest/sha1'
 
 class Jurisdiction < ActiveRecord::Base
   self.inheritance_column = :_type_disabled
@@ -38,16 +40,147 @@ class CommonStandardsImport
     Standard.connection.execute("update #{@tbl} as st set child_count = cc.child_count from (select id, (select count(*) from #{@tbl} sc where sp.id = ANY(sc.parent_ids)) child_count from #{@tbl} sp) as cc where st.id = cc.id;")
   end
 
+  def self.import_custom(title, source_dir)
+    ensure_setup
+    importer = self.new
+    jur_hash = {
+      "title" => title,
+      "id" => SecureRandom.uuid,
+      "type" => "private",
+      "comment" => "Created by Standards Importer",
+    }
+    Jurisdiction.transaction do
+      custom_jurisdiction = importer.create_jurisdiction(jur_hash)
+
+      importer.import_from_csv(custom_jurisdiction, source_dir)
+      puts "successfully imported standards, new Jurisdiction id: #{custom_jurisdiction.id}"
+    end
+
+  end
+
+  def import_from_csv(jurisdiction, source_dir)
+    files = Dir["#{source_dir}/*.csv"]
+    puts files
+
+    refresh_standards = []
+    files.each do |file|
+      puts "Importing #{file}"
+      CSV.foreach(file, :headers => true) do |row|
+        root_id = Digest::SHA1.hexdigest(jurisdiction.csp_id + row['Grade'] + row['Subject'])
+        # puts row
+        ed_levels = [row['Grade']]
+        root = Standard.where(csp_id: root_id, jurisdiction: jurisdiction).first
+        unless root
+          root = Standard.create(
+            jurisdiction: jurisdiction,
+            csp_id: root_id,
+            education_levels: ed_levels,
+            title: "#{row['Subject']} #{row['Grade']}",
+            document: {
+              title: "#{row['Subject']} #{row['Grade']}",
+              csp_id: root_id,
+              description: "#{jurisdiction.title} - #{row['Subject']} #{row['Grade']}",
+              subject: row['Subject']
+            },
+            indexed: false
+          )
+          puts "created root: #{root.title}"
+
+        end
+
+        refresh_standards.push(root.id)
+        parent_ids = [root.id]
+
+        if row['Topic']
+          topic_id = Digest::SHA1.hexdigest(jurisdiction.csp_id + row['Grade'] + row['Subject'] + row['Topic'])
+          topic = Standard.where(csp_id: topic_id, jurisdiction: jurisdiction).first
+          unless topic
+            topic = Standard.create(
+              jurisdiction: jurisdiction,
+              csp_id: topic_id,
+              education_levels: ed_levels,
+              title: "#{row['Topic']}",
+              document: {
+                title: "#{row['Topic']}",
+                csp_id: topic_id,
+                description: "#{jurisdiction.title} - #{row['Subject']}/#{row['Topic']} #{row['Grade']}",
+                subject: row['Subject']
+              },
+              indexed: false,
+              parent_ids: parent_ids
+            )
+            puts "Created Topic #{topic.title}"
+          end
+          refresh_standards.push(topic.id)
+          parent_ids.push(topic.id)
+        end
+
+        if row['Subtopic']
+          subtopic_id = Digest::SHA1.hexdigest(jurisdiction.csp_id + row['Grade'] + row['Subject'] + row['Topic'] + row['Subtopic'])
+          subtopic = Standard.where(csp_id: subtopic_id, jurisdiction: jurisdiction).first
+          unless subtopic
+            subtopic = Standard.create(
+              jurisdiction: jurisdiction,
+              csp_id: subtopic_id,
+              education_levels: ed_levels,
+              title: "#{row['Subtopic']}",
+              document: {
+                title: "#{row['Subtopic']}",
+                csp_id: subtopic_id,
+                description: "#{jurisdiction.title} - #{row['Subject']}/#{row['Topic']}/#{row['Subtopic']} #{row['Grade']}",
+                subject: row['Subject']
+              },
+              indexed: false,
+              parent_ids: parent_ids
+            )
+            puts "Created subtopic #{subtopic.title}"
+          end
+          refresh_standards.push(subtopic.id)
+          parent_ids.push(subtopic.id)
+        end
+
+        standard_id = Digest::SHA1.hexdigest(jurisdiction.csp_id + row['Grade'] + row['Subject'] + row['Topic'].to_s + row['Subtopic'].to_s + row['Description'].to_s)
+        standard = Standard.where(csp_id: standard_id, jurisdiction: jurisdiction).first
+        if standard
+          puts "Duplicate standard! #{row['Description']}"
+        else
+          Standard.create(
+            jurisdiction: jurisdiction,
+            csp_id: standard_id,
+            education_levels: ed_levels,
+            title: "#{row['Description']}",
+            document: {
+              title: "#{row['Description']}",
+              csp_id: standard_id,
+              description: "#{row['Description']}",
+              subject: row['Subject'],
+              listId: row['Code']
+            },
+            indexed: true,
+            parent_ids: parent_ids
+          )
+        end
+      end
+    end
+    refresh_standards.each do |id|
+      standard = Standard.find(id)
+      standard.child_count = Standard.where("#{id} = ANY(parent_ids)").count
+      standard.save!
+    end
+  end
+
   def import_jurisdictions(file)
     jurisdictions = JSON.parse(File.read(file))
-    jurisdictions.each do |jur|
-      Jurisdiction.create(
-        title: jur["title"],
-        csp_id: jur["id"],
-        type: jur["type"],
-        document: jur
-      )
-    end
+    jurisdictions.each {|j| create_jurisdiction(j)}
+  end
+
+  def create_jurisdiction(jur)
+    Jurisdiction.create(
+      title: jur["title"],
+      csp_id: jur["id"],
+      type: jur["type"],
+      document: jur
+    )
   end
 
   def import_standards(file)
